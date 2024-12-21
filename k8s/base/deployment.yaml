@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubepulse-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubepulse-backend
+  template:
+    metadata:
+      labels:
+        app: kubepulse-backend
+    spec:
+      serviceAccountName: kubepulse-sa
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: backend
+        image: ghcr.io/miketomlin19/kubepulse-backend:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /ws
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ws
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10 
