@@ -12,6 +12,20 @@ import (
 )
 
 func main() {
+	// Create context that will be canceled on SIGINT/SIGTERM
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Create a channel to receive OS signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Handle shutdown signals
+	go func() {
+		sig := <-sigChan
+		log.Printf("Received signal %v, initiating shutdown...", sig)
+		cancel()
+	}()
+
 	// Create Kubernetes client
 	k8sClient, err := k8s.NewClient()
 	if err != nil {
@@ -20,18 +34,6 @@ func main() {
 
 	// Create WebSocket server
 	wsServer := server.NewWSServer(k8sClient)
-
-	// Create context that will be canceled on SIGINT/SIGTERM
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle shutdown signals
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		cancel()
-	}()
 
 	// Start watching cluster state
 	k8sClient.StartWatching(ctx)
@@ -42,8 +44,13 @@ func main() {
 		addr = ":8080"
 	}
 
-	log.Printf("Starting WebSocket server on %s", addr)
+	// Start the server
 	if err := wsServer.Start(ctx, addr); err != nil {
-		log.Fatalf("Server error: %v", err)
+		log.Printf("Server error: %v", err)
+		cancel()
 	}
+
+	// Wait for shutdown to complete
+	<-ctx.Done()
+	log.Println("Shutdown complete")
 }

@@ -1,0 +1,44 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kubepulse
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/ws`)
+      kind: Rule
+      services:
+        - name: kubepulse-backend
+          port: 8080
+          kind: Service
+      middlewares:
+        - name: strip-ws-prefix
+        - name: ws-headers
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: kubepulse-frontend
+          port: 80
+          kind: Service
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-ws-prefix
+spec:
+  stripPrefix:
+    prefixes:
+      - /ws
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ws-headers
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "ws"
+    customResponseHeaders:
+      Upgrade: "websocket"
+      Connection: "upgrade"

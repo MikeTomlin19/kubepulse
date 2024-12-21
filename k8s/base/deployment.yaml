@@ -18,6 +18,7 @@ spec:
       containers:
       - name: backend
         image: ghcr.io/miketomlin19/kubepulse-backend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         resources:
@@ -29,13 +30,13 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /ws
+            path: /health
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /ws
+            path: /health
             port: 8080
           initialDelaySeconds: 5
-          periodSeconds: 10 
+          periodSeconds: 10

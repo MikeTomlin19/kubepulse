@@ -3,11 +3,13 @@ kind: Kustomization
 
 resources:
 - deployment.yaml
-- service.yaml
+- services.yaml
 - rbac.yaml
+- ingress.yaml
 - frontend.yaml
-- registry-secret.yaml
 
-commonLabels:
-  app.kubernetes.io/name: kubepulse
-  app.kubernetes.io/part-of: kubepulse 
+labels:
+  - pairs:
+      app.kubernetes.io/name: kubepulse
+      app.kubernetes.io/part-of: kubepulse
+    includeSelectors: false

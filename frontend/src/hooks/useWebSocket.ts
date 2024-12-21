@@ -6,7 +6,9 @@ export function useWebSocket() {
   const [clusterData, setClusterData] = useState<ClusterData | null>(null);
 
   const connect = useCallback(() => {
-    const ws = new WebSocket(WS_URL);
+    console.log('Connecting to WebSocket at:', WS_URL);
+    
+    const ws = new WebSocket(WS_URL, ['websocket']);
 
     ws.onopen = () => {
       console.log('WebSocket connected');
@@ -28,14 +30,16 @@ export function useWebSocket() {
       console.error('WebSocket error:', error);
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
+    ws.onclose = (event) => {
+      console.log('WebSocket disconnected:', event.code, event.reason);
       // Attempt to reconnect after 5 seconds
       setTimeout(connect, 5000);
     };
 
     return () => {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     };
   }, []);
 
